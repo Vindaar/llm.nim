@@ -3,11 +3,14 @@
 This is a port of Andrej Karpathy's [[https://github.com/karpathy/llm.c][llm.c]] project (the CPU version). I
 toyed around with it the day he released the initial version for a
 couple of hours, but only continued with it on a train / plane trip I
-had. In particular we started from commit ~a22c22b~. In particular
-this means the tokenizer is not there at the moment. I might add it
-one of these days.
+had last weekend (<2024-04-20 Sat>). In particular we started from
+commit ~a22c22b~. In particular this means the tokenizer is not there
+at the moment. I might add it one of these days.
 
-Performance is ~comparable to the C version. 
+Performance is ~comparable to the C version.
+
+Note: the port was done in a bit of a hurry, so who knows what bugs
+lurk compared to the original! :)
 
 ** Differences to the C version
 
