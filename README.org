@@ -1,0 +1,62 @@
+* llm.nim
+
+This is a port of Andrej Karpathy's [[https://github.com/karpathy/llm.c][llm.c]] project (the CPU version). I
+toyed around with it the day he released the initial version for a
+couple of hours, but only continued with it on a train / plane trip I
+had. In particular we started from commit ~a22c22b~. In particular
+this means the tokenizer is not there at the moment. I might add it
+one of these days.
+
+Performance is ~comparable to the C version. 
+
+** Differences to the C version
+
+1. We have a _very_ shallow abstraction of the raw pointer buffer
+   interface from C in the form of a ~MView[T]~ type (which is just a
+   ~ptr UncheckedArray[T]~ in Nim lang + a few goodies, notably a ~{}~
+   accessor to do pointer arithmetic for a more 'natural' access to
+   another buffer.
+2. We use Nim's CT features to automatically assign the correct buffer
+   views for the ~*Tensor~ fields based on ~fieldPairs~, their order
+   in the ~object~ and the ~params/act_sizes~ input.
+3. Generally less pointer handling.
+4. We use destructors for the ~GPT2~ and ~DataLoader~ objects so that
+   we don't have to free manually (and copying these is disallowed)
+5. Instead of relying on OpenMP's ~collapse~ primitive to fuse
+   multiple nested loops, we use a custom Nim CT based loop fusion macro, 
+   see [[./fuse_loops.nim]]. The issue is that because Nim converts ~for~
+   loops into ~while~ statements, it doesn't play nice with nested
+   loops for OpenMP. :) So I wrote a macro that wraps around for loops
+   and performs the loop fusion manually (note that it only works for
+   ~for i in 0 ..< X~ style loops (i.e. lower index 0 and using ~..<~).
+
+*** Notes about Nim
+
+We have to compile with ~--exceptions:quirky~, because otherwise the
+inserted Nim error checks break the OpenMP compilation. We could
+disable checks locally in the code, but for this here it's fine.
+
+See also:
+https://github.com/nim-lang/Nim/issues/23311
+
+** Compilation
+
+The important compilation arguments are defined in a local ~nim.cfg~
+and at the top of the ~train_gpt2.nim~ file (fast-math and OpenMP
+related).
+
+Otherwise just compile with:
+#+begin_src nim
+nim c -d:danger -d:openmp -d:lto --passC:"-march=native" train_gpt2.nim
+#+end_src
+
+Otherwise follow the CPU instructions from the original repo to get started:
+https://github.com/karpathy/llm.c?tab=readme-ov-file#quick-start-cpu
+
+
+** Why?
+
+Similar to my [[https://github.com/Vindaar/llama2nim][Nim port]] of his [[https://github.com/karpathy/llama2.c][llama2.c]], I had time to kill on a trip!
+And doing such 'dumb' ports is kind of meditative... lol
+
+
